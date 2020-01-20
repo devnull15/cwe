@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int BUF_SIZE = 10;
+char *FN = "./test.txt";
+int INT_MAX = //just a really big int for file b
+  
+int my_strlen(char *str) {
+  printf("my_strlen.\n");
+  const char* ptr = str;
+  while(*ptr!=0x00) {
+    //printf("str: %08x ; ptr: %08x\n",str,ptr);
+    ++ptr;
+  }
+  //printf("str: %08x ; ptr: %08x\n",str,ptr);
+  //printf("%d\n", ptr-str); 
+  
+  return ptr-str;
+}
+
+char * my_fread(char *buf, int n, FILE *file) {
+  printf("my_fread.\n");
+  char *ptr = buf;
+  char c;
+  int i = 0;
+  while((c = getc(file))!=-1 && i<n-1){
+    *ptr = c;
+    ++ptr;
+    ++i;
+  }
+  *ptr = 0x00;
+  return buf;
+}
+
+//this function is written dumbly so that it uses my_fread and my_strlen. Which is what I assume
+// they want from this project. Would be much more efficient to just do everything in my_fgets.
+int my_fgets(char *lineptr, int *n, FILE *file){
+  printf("my_fgets.\n");
+
+  //3bi. read line from file then find newline.
+  char nl_base[INT_MAX]; //doing this for simplicity, wouldn't be good in practice.
+  char *nl_scanner = my_fread(nl_base,INT_MAX,file);
+  while(*nl_scanner!=0x0a){ ++nl_scanner; }
+  ++nl_scanner;
+  nl_scanner = 0x00;
+  int n_read = my_strlen(nl_base);
+  
+  //3bii. if LINEPTR is NULL function allocates memory for lineptr. *N is set to size of buffer.
+  //NOTE: N cannot be NULL.
+  if(!lineptr) {
+    lineptr = malloc(n_read);
+    *n = n_read;
+  }
+  else {
+    //3biii. LINEPTR is allocated but too small
+    if(n_read > *n) {
+      lineptr = realloc(lineptr,n_read);
+      *n = n_read;
+    }
+    //3biii. LINEPTR is allocated and the right size THIS ASSUMES N IS THE SIZE OF LINEPTR AND IS CORRECT
+  }
+  strcpy(lineptr,nl_base);
+  printf("lineptr: %s\n\n",lineptr);
+  return n_read;
+
+
+}
+
+
+int main(int argc, char **argv) {
+  //stdout unbuffered for debugging.
+  setvbuf(stdout,NULL,_IONBF,0);
+  
+  printf("Main.\n\n");
+
+  //1. my_strlen test
+  char hw[] = "Hello World!\0";
+  printf("%s : %d\n\n", hw, my_strlen(hw));
+
+  //2. my_fread test
+  FILE *f = fopen(FN,"r");
+  char buf[BUF_SIZE];
+  my_fread(buf,BUF_SIZE,f);
+  printf("buf: %s %d\n\n",buf,buf[9]);
+
+  //3 my_fgets test
+  char *lineptr = NULL;
+  int *n = malloc(sizeof(int));
+  fseek(f,0,0); //go back to the beginning.
+  printf("chars read = %d\n", my_fgets(lineptr,n,f));
+  printf("lineptr: %s\n\n",lineptr);
+
+  
+  return 0;
+}
